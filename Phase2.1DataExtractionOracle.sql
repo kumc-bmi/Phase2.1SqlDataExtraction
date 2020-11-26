@@ -1,3 +1,4 @@
+set echo on ;
 --##############################################################################
 --### 4CE Phase 2.1
 --### Date: September 25, 2020
@@ -22,6 +23,15 @@
 --------------------------------------------------------------------------------
 -- General settings
 --------------------------------------------------------------------------------
+whenever sqlerror continue
+;
+drop table config2 purge;
+drop table PatientSummary purge;
+drop table PatientClinicalCourse purge;
+drop table PatientObservations purge;
+drop table PatientMapping purge;
+whenever sqlerror exit sql.sqlcode
+;
 create table config2 (
 	replace_patient_num number(1), -- Replace the patient_num with a unique random number
 	save_as_columns number(1), -- Save the data as tables with separate columns per field
@@ -118,7 +128,7 @@ insert INTO patientsummary (
 		) d on c.patient_num=d.patient_num ;
         
         commit;
-
+--25 rows inserted ( too small)
 --------------------------------------------------------------------------------
 -- Patient Clinical Course: Status by Number of Days Since Admission
 --------------------------------------------------------------------------------
@@ -189,11 +199,12 @@ insert into PatientObservations (siteid, patient_num, days_since_admission, conc
         substr(substr(f.concept_cd, length(code_prefix_icd9cm)+1, 999), 1, 3) icd_code_3chars ,
 		-999
  	from covid_config x
-		cross join observation_fact f
+		cross join nightherondata.observation_fact f
 		inner join covid_cohort p 
         on f.patient_num=p.patient_num 
         and f.start_date >= (p.admission_date -365)
     where concept_cd like code_prefix_icd9cm||'%' and  code_prefix_icd9cm is not null;
+--0 rows inserted.
     commit;
     
 -- Diagnoses (3 character ICD10 codes) since 365 days before COVID
@@ -205,12 +216,12 @@ insert into PatientObservations (siteid, patient_num, days_since_admission, conc
         substr(substr(f.concept_cd, length(code_prefix_icd10cm)+1, 999), 1, 3) icd_code_3chars,
 		-999
  	from covid_config x
-		cross join observation_fact f
+		cross join nightherondata.observation_fact f
 		inner join covid_cohort p 
 			on f.patient_num=p.patient_num 
                 and f.start_date >= (p.admission_date -365)
     where concept_cd like code_prefix_icd10cm||'%' ; --and code_prefix_icd10cm is not null;
-    
+--0 rows inserted.    
     commit;
  -- Medications (Med Class) since 365 days before COVID   
  insert into PatientObservations (siteid, patient_num, days_since_admission, concept_type, concept_code, value)
@@ -220,12 +231,13 @@ insert into PatientObservations (siteid, patient_num, days_since_admission, conc
 		'MED-CLASS',
 		m.med_class,	
 		-999
-	from observation_fact f
+	from nightherondata.observation_fact f
 		inner join covid_cohort p 
 			on f.patient_num=p.patient_num 
                 and f.start_date >= ( p.admission_date -365)
 		inner join covid_med_map m
 			on f.concept_cd = m.local_med_code;
+-- 93 rows inserted.
  commit;
  
  -- Labs (LOINC) since 60 days (two months) before COVID
@@ -236,7 +248,7 @@ insert into PatientObservations (siteid, patient_num, days_since_admission, conc
 		'LAB-LOINC',		
 		l.loinc,
 		avg(f.nval_num*l.scale_factor)
-	from observation_fact f
+	from nightherondata.observation_fact f
 		inner join covid_cohort p 
 			on f.patient_num=p.patient_num
 		inner join COVID_LAB_MAP l
@@ -247,6 +259,7 @@ insert into PatientObservations (siteid, patient_num, days_since_admission, conc
         and f.start_date >= ( p.admission_date -60)
         and l.scale_factor is not null
     group by f.patient_num, trunc(f.start_date) - trunc(p.admission_date) , l.loinc;
+--142 rows inserted.
  commit;   
 -- Procedures (ICD9) each day since COVID (only procedures used in 4CE Phase 1.1 to determine severity)
 insert into PatientObservations (siteid, patient_num, days_since_admission, concept_type, concept_code, value)
@@ -257,7 +270,7 @@ insert into PatientObservations (siteid, patient_num, days_since_admission, conc
         substr(f.concept_cd, length(code_prefix_icd9proc)+1, 999),
 		-999
  	from covid_config x
-		cross join observation_fact f
+		cross join nightherondata.observation_fact f
 		inner join covid_cohort p 
 			on f.patient_num=p.patient_num 
 				and f.start_date >= p.admission_date
@@ -268,6 +281,7 @@ insert into PatientObservations (siteid, patient_num, days_since_admission, conc
 			-- Invasive mechanical ventilation
             or regexp_like(f.concept_cd , x.code_prefix_icd9proc||'96.7[012]{1}') --Converted to ORACLE Regex 
 		);
+--0 rows inserted.
 commit;
 -- Procedures (ICD10) each day since COVID (only procedures used in 4CE Phase 1.1 to determine severity)
 
@@ -278,7 +292,7 @@ insert into PatientObservations (siteid, patient_num, days_since_admission, conc
         substr(f.concept_cd, length(code_prefix_icd10pcs)+1, 999) ,
 		-999
  	from covid_config x
-		cross join observation_fact f
+		cross join nightherondata.observation_fact f
 		inner join covid_cohort p 
 			on f.patient_num=p.patient_num 
 				and f.start_date >= p.admission_date
@@ -289,6 +303,7 @@ insert into PatientObservations (siteid, patient_num, days_since_admission, conc
 			-- Invasive mechanical ventilation
             or regexp_like(f.concept_cd , x.code_prefix_icd10pcs||'5A09[345]{1}[A-Z0-9]?') --Converted to ORACLE Regex 
 		) ;
+--0 rows inserted.
 commit;
 
 
@@ -322,7 +337,7 @@ begin
  If v_counts > 0 Then
         insert into PatientMapping (siteid, patient_num, study_num)
         select distinct '@',m.patient_ide,m.patient_num
-        from patient_mapping m
+        from nightherondata.patient_mapping m
         inner join PatientSummary p
         on m.patient_ide = p.patient_num;
 
@@ -359,6 +374,14 @@ else
  End if;
 
 end;
+/*
+Error report -
+ORA-01407: cannot update ("LPATEL"."PATIENTSUMMARY"."PATIENT_NUM") to NULL
+ORA-06512: at line 14
+01407. 00000 -  "cannot update (%s) to NULL"
+*Cause:    
+*Action:
+*/
 
 --------------------------------------------------------------------------------
 -- Set the siteid to a unique value for your institution.
@@ -528,3 +551,4 @@ end;
 		) t
 		order by i;
 --spool off;   
+exit;
