@@ -391,7 +391,8 @@ update PatientClinicalCourse set siteid = (select siteid from covid_config);
 update PatientObservations set siteid = (select siteid from covid_config);
 update PatientMapping set siteid = (select siteid from covid_config);
 commit;
-
+exit
+;
 --******************************************************************************
 --******************************************************************************
 --*** Finish up
@@ -551,4 +552,3 @@ end;
 		) t
 		order by i;
 --spool off;   
-exit;
