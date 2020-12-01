@@ -79,7 +79,7 @@ insert into config2
 	select 
 		1, -- replace_patient_num
 		0, -- save_as_columns
-		'P2', -- save_as_prefix (don't use "4CE" since it starts with a number)
+		'P2', -- save_as_prefix (dont use 4CE since it starts with a number)
 		0, -- output_as_columns
 		1 from dual; -- output_as_csv
 --1 row inserted.
