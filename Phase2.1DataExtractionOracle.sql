@@ -34,23 +34,6 @@ drop table icd_map purge;
 whenever sqlerror exit sql.sqlcode
 ;
 --------------------------------------------------------------------------------
---- Update COVID_CONFIG (KUMC specific)
---------------------------------------------------------------------------------
--- TODO: is it possible to set dx_id as prefix in 4ce1.1 code and still work?
---delete covid_config
---where CODE_PREFIX_ICD9CM = 'KUH|DX_ID:';
---commit;
---UPDATE "COVID_CONFIG" 
---SET CODE_PREFIX_ICD10CM = 'KUH|DX_ID:'
---WHERE siteid like 'KU%'
---;
---UPDATE "COVID_CONFIG" 
---SET CODE_PREFIX_ICD9CM = 'KUH|DX_ID:'
---WHERE siteid like 'KU%'
---;
---commit;
-select * from covid_config;
---------------------------------------------------------------------------------
 -- ICD to DX_ID mappping (KUMC specififc)
 --------------------------------------------------------------------------------
 create table icd_map
@@ -73,8 +56,6 @@ create table config2 (
 	output_as_columns number(1), -- Return the data in tables with separate columns per field
 	output_as_csv number(1) -- Return the data in tables with a single column containing comma separated values
 );
-
-
 insert into config2
 	select 
 		1, -- replace_patient_num
