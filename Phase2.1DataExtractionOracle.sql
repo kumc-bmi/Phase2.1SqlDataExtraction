@@ -50,7 +50,6 @@ whenever sqlerror exit sql.sqlcode
 --;
 --commit;
 select * from covid_config;
---;
 --------------------------------------------------------------------------------
 -- ICD to DX_ID mappping (KUMC specififc)
 --------------------------------------------------------------------------------
@@ -265,10 +264,7 @@ insert into PatientObservations (siteid, patient_num, days_since_admission, conc
             on f.concept_cd = ICD_map.dx_id                                                                     -- KUMC specific 
     --where concept_cd like code_prefix_icd10cm||'%'  --and code_prefix_icd10cm is not null;
     where concept_cd in (select dx_id from ICD_map) ; --and code_prefix_icd10cm is not null;                    -- KUMC specific
-        --130,730 rows inserted.
-select * from PatientObservations
-where concept_type ='DIAG-ICD10'
-;
+--130,730 rows inserted.
 commit;
 
  -- Medications (Med Class) since 365 days before COVID   
@@ -334,7 +330,8 @@ commit;
 -- Procedures (ICD10) each day since COVID (only procedures used in 4CE Phase 1.1 to determine severity)
 
 insert into PatientObservations (siteid, patient_num, days_since_admission, concept_type, concept_code, value)
-	select distinct '@', p.patient_num,
+	select distinct '@', --987654321, 1,
+        p.patient_num,
         trunc(f.start_date) - trunc(p.admission_date) days_since_admission,
 		'PROC-ICD10',
         substr(f.concept_cd, length(code_prefix_icd10pcs)+1, 999) ,
@@ -353,7 +350,16 @@ insert into PatientObservations (siteid, patient_num, days_since_admission, conc
 		) ;
 --0 rows inserted.
 commit;
+select count(distinct patient_num) from nightherondata.observation_fact
+	where concept_cd like 'ICD10:'||'%'  
+		and concept_cd = 'ICD10:0BH17EZ';
+--142
+select count(distinct patient_num) from nightherondata.observation_fact
+	where concept_cd like 'ICD9:'||'%'  
+		and concept_cd = 'ICD9:96.04';
+--32
 
+--;
 
 --******************************************************************************
 --******************************************************************************
