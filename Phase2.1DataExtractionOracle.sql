@@ -59,7 +59,7 @@ create table config2 (
 insert into config2
 	select 
 		1, -- replace_patient_num
-		0, -- save_as_columns
+		1, -- save_as_columns
 		'P2', -- save_as_prefix (dont use 4CE since it starts with a number)
 		0, -- output_as_columns
 		1 from dual -- output_as_csv
@@ -427,14 +427,12 @@ update PatientClinicalCourse set siteid = (select siteid from covid_config);
 update PatientObservations set siteid = (select siteid from covid_config);
 update PatientMapping set siteid = (select siteid from covid_config);
 commit;
-exit
-;
+
 --******************************************************************************
 --******************************************************************************
 --*** Finish up
 --******************************************************************************
 --******************************************************************************
-
 --------------------------------------------------------------------------------
 -- OPTION #: Save the data as tables.
 -- * Make sure everything looks reasonable.
@@ -479,6 +477,8 @@ dbms_output.put_line( 'Per config setting skipping the run');
 
 end;
 
+exit
+;
 ----
 
 --------------------------------------------------------------------------------
