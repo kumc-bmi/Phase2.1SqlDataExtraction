@@ -4,7 +4,7 @@ set pagesize 0  -- No header rows
 set trimspool on -- remove trailing blanks
 set feedback off
 set markup csv on
-spool P2PATIENTMAPPING.csv
+spool LocalPatientMapping.csv
 set colsep ','
 select SITEID ,PATIENT_NUM ,STUDY_NUM  from P2PATIENTMAPPING;
 spool off;

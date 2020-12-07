@@ -4,7 +4,7 @@ set pagesize 0  -- No header rows
 set trimspool on -- remove trailing blanks
 set feedback off
 set markup csv on
-spool P2PATIENTCLINICALCOURSE.csv
+spool LocalPatientCLinicalCourse.csv
 set colsep ','
 select SITEID ,PATIENT_NUM ,DAYS_SINCE_ADMISSION ,CALENDAR_DATE ,IN_HOSPITAL ,SEVERE ,DECEASED  from P2PATIENTCLINICALCOURSE;
 spool off;
